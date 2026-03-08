@@ -1,0 +1,23 @@
+services:
+  # Backend API Service
+  - type: web
+    name: medicare-backend
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGODB_URI
+        value: mongodb+srv://Harmanjot:1234@cluster0.evaq1ce.mongodb.net/mern_auth
+      - key: JWT_SECRET
+        value: Harmanjot
+      - key: JWT_REFRESH_SECRET
+        value: Harmanjot
+      - key: EMAIL_USER
+        value: harmanjotk173@gmail.com
+      - key: EMAIL_PASS
+        value: wyvl vodv nzzr rwfg
