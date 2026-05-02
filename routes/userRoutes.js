@@ -237,13 +237,13 @@ router.post("/refresh-token", async(req, res) => {
         // Verify refresh token
         const decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
 
-        // Check if refresh token is still valid in our store
-        if (!isValidRefreshToken(decoded.id, refreshToken)) {
-            return res.status(403).json({
-                status: false,
-                msg: "Invalid refresh token"
-            });
-        }
+        // In-memory store gets wiped when Render sleeps. We skip this strict check to prevent mass logouts.
+        // if (!isValidRefreshToken(decoded.id, refreshToken)) {
+        //     return res.status(403).json({
+        //         status: false,
+        //         msg: "Invalid refresh token"
+        //     });
+        // }
 
         // Get user from database
         const user = await UserModel.findById(decoded.id);
