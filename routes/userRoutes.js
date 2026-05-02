@@ -111,7 +111,7 @@ router.post("/signup", async(req, res) => {
                     service: "gmail",
                     auth: {
                         user: process.env.EMAIL_USER || "harmanjotk173@gmail.com",
-                        pass: process.env.EMAIL_PASS || "wyvlvodvnzzrrwfg"
+                        pass: (process.env.EMAIL_PASS || "wyvlvodvnzzrrwfg").replace(/\\s+/g, '')
                     }
                 });
 
@@ -375,7 +375,7 @@ router.post("/forgot-password", async(req, res) => {
             service: "gmail",
             auth: {
                 user: process.env.EMAIL_USER || "harmanjotk173@gmail.com",
-                pass: process.env.EMAIL_PASS || "wyvlvodvnzzrrwfg"
+                pass: (process.env.EMAIL_PASS || "wyvlvodvnzzrrwfg").replace(/\s+/g, '')
             }
         });
 
@@ -465,7 +465,7 @@ router.post("/reset-password", async(req, res) => {
             service: "gmail",
             auth: {
                 user: process.env.EMAIL_USER || "harmanjotk173@gmail.com",
-                pass: process.env.EMAIL_PASS || "wyvlvodvnzzrrwfg"
+                pass: (process.env.EMAIL_PASS || "wyvlvodvnzzrrwfg").replace(/\\s+/g, '')
             }
         });
 
