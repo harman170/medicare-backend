@@ -22,7 +22,9 @@ const PORT = process.env.PORT || 5000;
 app.use(express.urlencoded({ extended: true }));
 app.use(cors({
   origin: ['https://medicare-frontend-dle7.onrender.com', 'http://localhost:3000', 'http://localhost:5173'],
-  credentials: true
+  credentials: false,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 app.use(fileUpload());
