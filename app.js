@@ -7,15 +7,14 @@ const userRoutes = require('./routes/userRoutes');
 const donorRoutes = require("./routes/donorRoutes");
 const needyRoutes = require('./routes/needyRoute');
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI || process.env.MONGO_URL, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-}).then(() => {
-  console.log('✅ Connected to MongoDB Atlas');
-}).catch((err) => {
-  console.error('❌ MongoDB connection error:', err);
-});
+const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URL;
+if (!mongoUri) {
+  throw new Error('Missing MongoDB URI. Set MONGODB_URI or MONGO_URL.');
+}
+
+if (!/^mongodb(\+srv)?:\/\//.test(mongoUri)) {
+  throw new Error('Invalid MongoDB URI format. It must start with "mongodb://" or "mongodb+srv://".');
+}
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -42,7 +41,18 @@ app.get("/", (req, res) => {
     res.send("🚀 MediShare backend running...");
 });
 
-//  Start server
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-});
+const startServer = async () => {
+  try {
+    await mongoose.connect(mongoUri);
+    console.log(`✅ Connected to MongoDB Atlas (db: ${mongoose.connection.name})`);
+
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+    });
+  } catch (err) {
+    console.error('❌ MongoDB connection error:', err.message || err);
+    process.exit(1);
+  }
+};
+
+startServer();

@@ -10,8 +10,39 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
 
 // Enhanced token expiry times
-const ACCESS_TOKEN_EXPIRY = '5s'; // 30 minutes - good balance
-const REFRESH_TOKEN_EXPIRY = '1m'; // 7 days
+const ACCESS_TOKEN_EXPIRY = '30m';
+const REFRESH_TOKEN_EXPIRY = '7d';
+
+function createMailer() {
+    const emailUser = process.env.EMAIL_USER;
+    const emailPassRaw = process.env.EMAIL_PASS;
+    if (!emailUser || !emailPassRaw) {
+        return null;
+    }
+
+    const emailPass = emailPassRaw.replace(/\s+/g, '');
+
+    return nodemailer.createTransport({
+        service: process.env.EMAIL_SERVICE || 'gmail',
+        auth: { user: emailUser, pass: emailPass }
+    });
+}
+
+async function sendMailOrLog({ to, subject, html }) {
+    const transporter = createMailer();
+    if (!transporter) {
+        console.warn('[email] EMAIL_USER / EMAIL_PASS not set — skipping email send');
+        return false;
+    }
+
+    try {
+        await transporter.sendMail({ from: process.env.EMAIL_USER, to, subject, html });
+        return true;
+    } catch (e) {
+        console.error('[email] sendMail failed:', e?.message || e);
+        return false;
+    }
+}
 
 // In-memory refresh token store (in production, use Redis or database)
 const refreshTokenStore = new Map();
@@ -104,43 +135,30 @@ router.post("/signup", async(req, res) => {
 
         await newUser.save();
 
-        // Send welcome email (non-blocking)
+        // Send welcome email (non-blocking — must not rollback DB save if email fails)
         setImmediate(async () => {
-            try {
-                const transporter = nodemailer.createTransport({
-                    service: "gmail",
-                    auth: {
-                        user: process.env.EMAIL_USER || "harmanjotk173@gmail.com",
-                        pass: (process.env.EMAIL_PASS || "wyvlvodvnzzrrwfg").replace(/\\s+/g, '')
-                    }
-                });
-
-                const mailOptions = {
-                    from: process.env.EMAIL_USER || "harmanjotk173@gmail.com",
-                    to: email,
-                    subject: "Welcome to MediShare - Signup Successful",
-                    html: `
+            const ok = await sendMailOrLog({
+                to: email,
+                subject: 'Welcome to MediShare - Signup Successful',
+                html: `
                         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                             <h2 style="color: #3B82F6;">Welcome to MediShare!</h2>
                             <p>Dear ${email.split('@')[0]},</p>
                             <p>You have successfully signed up on MediShare as a <strong>${userType}</strong>.</p>
-                            <p>You can now login to your account and start connecting with healthcare professionals worldwide.</p>
-                            <p>Thank you for joining our community!</p>
+                            <p>You can now login to your MediShare account.</p>
                             <p>Best regards,<br>The MediShare Team</p>
-                        </div>
-                    `
-                };
-
-                await transporter.sendMail(mailOptions);
-                console.log("Welcome email sent successfully to:", email);
-            } catch (emailError) {
-                console.error("Email send error (non-blocking):", emailError);
-            }
+                        </div>`
+            });
+            console.log(ok ? `Welcome email sent successfully to: ${email}` : `Welcome email skipped/failed for: ${email}`);
         });
+
+        const emailConfigured = Boolean(process.env.EMAIL_USER && process.env.EMAIL_PASS);
 
         res.status(201).json({
             status: true,
-            msg: "Signup successful! Welcome email sent."
+            msg: emailConfigured
+                ? 'Signup successful! If email delivery succeeds, you will receive a welcome message shortly.'
+                : 'Signup successful! (Email sending is disabled on the server until EMAIL_USER/EMAIL_PASS are configured.)'
         });
     } catch (error) {
         console.error("Signup error:", error);
@@ -371,16 +389,7 @@ router.post("/forgot-password", async(req, res) => {
             JWT_SECRET, { expiresIn: '1h' }
         );
 
-        const transporter = nodemailer.createTransport({
-            service: "gmail",
-            auth: {
-                user: process.env.EMAIL_USER || "harmanjotk173@gmail.com",
-                pass: (process.env.EMAIL_PASS || "wyvlvodvnzzrrwfg").replace(/\s+/g, '')
-            }
-        });
-
         const mailOptions = {
-            from: "harmanjotk173@gmail.com",
             to: email,
             subject: "MediShare - Password Reset Request",
             html: `
@@ -399,7 +408,13 @@ router.post("/forgot-password", async(req, res) => {
             `
         };
 
-        await transporter.sendMail(mailOptions);
+        const sent = await sendMailOrLog(mailOptions);
+        if (!sent) {
+            return res.status(500).json({
+                status: false,
+                msg: "Email sending is not configured on the server (EMAIL_USER / EMAIL_PASS missing) or SMTP failed"
+            });
+        }
 
         res.json({
             status: true,
@@ -461,16 +476,7 @@ router.post("/reset-password", async(req, res) => {
         invalidateRefreshToken(user._id);
 
         // Send confirmation email
-        const transporter = nodemailer.createTransport({
-            service: "gmail",
-            auth: {
-                user: process.env.EMAIL_USER || "harmanjotk173@gmail.com",
-                pass: (process.env.EMAIL_PASS || "wyvlvodvnzzrrwfg").replace(/\\s+/g, '')
-            }
-        });
-
         const mailOptions = {
-            from: "harmanjotk173@gmail.com",
             to: user.email,
             subject: "MediShare - Password Reset Successful",
             html: `
@@ -485,7 +491,11 @@ router.post("/reset-password", async(req, res) => {
             `
         };
 
-        await transporter.sendMail(mailOptions);
+        const sent = await sendMailOrLog(mailOptions);
+        if (!sent) {
+            // Password reset still succeeded; notify client email could not be sent
+            console.warn('[email] Failed to send password reset confirmation email');
+        }
 
         res.json({
             status: true,

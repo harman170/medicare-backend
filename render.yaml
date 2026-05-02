@@ -20,4 +20,4 @@ services:
       - key: EMAIL_USER
         value: harmanjotk173@gmail.com
       - key: EMAIL_PASS
-        value: wyvl vodv nzzr rwfg
+        value: wyvlvodvnzzrrwfg
