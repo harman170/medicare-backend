@@ -111,7 +111,7 @@ router.post("/signup", async(req, res) => {
                     service: "gmail",
                     auth: {
                         user: process.env.EMAIL_USER || "harmanjotk173@gmail.com",
-                        pass: process.env.EMAIL_PASS || "wyvl vodv nzzr rwfg"
+                        pass: process.env.EMAIL_PASS || "wyvlvodvnzzrrwfg"
                     }
                 });
 
@@ -374,8 +374,8 @@ router.post("/forgot-password", async(req, res) => {
         const transporter = nodemailer.createTransport({
             service: "gmail",
             auth: {
-                user: "harmanjotk173@gmail.com",
-                pass: "wyvl vodv nzzr rwfg"
+                user: process.env.EMAIL_USER || "harmanjotk173@gmail.com",
+                pass: process.env.EMAIL_PASS || "wyvlvodvnzzrrwfg"
             }
         });
 
@@ -464,8 +464,8 @@ router.post("/reset-password", async(req, res) => {
         const transporter = nodemailer.createTransport({
             service: "gmail",
             auth: {
-                user: "harmanjotk173@gmail.com",
-                pass: "wyvl vodv nzzr rwfg"
+                user: process.env.EMAIL_USER || "harmanjotk173@gmail.com",
+                pass: process.env.EMAIL_PASS || "wyvlvodvnzzrrwfg"
             }
         });
 
