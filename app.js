@@ -43,6 +43,15 @@ app.get("/", (req, res) => {
     res.send("🚀 MediShare backend running...");
 });
 
+// Simple health check
+app.get("/health", (req, res) => {
+    res.json({
+        status: "ok",
+        message: "Backend is healthy",
+        timestamp: new Date().toISOString()
+    });
+});
+
 // Debug route
 app.get("/debug", (req, res) => {
     res.json({
