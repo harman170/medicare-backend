@@ -43,6 +43,22 @@ app.get("/", (req, res) => {
     res.send("🚀 MediShare backend running...");
 });
 
+// Debug route
+app.get("/debug", (req, res) => {
+    res.json({
+        status: true,
+        msg: "Backend is working!",
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV,
+        routes: {
+            users: "/api/users",
+            donors: "/api/donors",
+            needy: "/api/needy",
+            donations: "/api/donations"
+        }
+    });
+});
+
 const startServer = async () => {
   try {
     await mongoose.connect(mongoUri);
